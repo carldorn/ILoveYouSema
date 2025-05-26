@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>I LOVE YOU SEMA @zhjingyi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            cursor: pointer;
+        }
+        #canvas-container {
+            position: relative;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 90vh;
+        }
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px #ff69b4, 0 0 10px #ff69b4;
+            }
+            to {
+                text-shadow: 0 0 10px #ff69b4, 0 0 20px #ff69b4, 0 0 30px #ff69b4;
+            }
+        }
+        #tap-hint {
+            position: absolute;
+            bottom: 20px;
+            color: white;
+            text-align: center;
+            width: 100%;
+            animation: glow 1.5s ease-in-out infinite alternate;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    <audio id="bgMusic" loop>
+        <source src="semaily.mp3" type="audio/mp3">
+    </audio>
+    <script>
+        // Fixed canvas size (original size)
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 800;
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const bgMusic = document.getElementById('bgMusic');
+        const tapHint = document.getElementById('tap-hint');
+        
+        // Set fixed size for calculations
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+        
+        // Double tap detection
+        let lastTap = 0;
+        let tapCount = 0;
+        
+        function handleInteraction() {
+            const now = new Date().getTime();
+            const timeSinceLastTap = now - lastTap;
+            
+            if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+                // Double tap detected
+                playAudio();
+            }
+            
+            lastTap = now;
+        }
+        
+        // Add event listeners for both mouse and touch
+        document.addEventListener('click', handleInteraction);
+        document.addEventListener('touchend', function(e) {
+            e.preventDefault(); // Prevent default touch behavior
+            handleInteraction();
+        });
+        
+        function playAudio() {
+            bgMusic.play()
+                .then(() => {
+                    console.log("Audio started successfully");
+                    tapHint.style.opacity = '0';
+                    setTimeout(() => tapHint.style.display = 'none', 500);
+                })
+                .catch(error => {
+                    console.error("Audio playback failed:", error);
+                    tapHint.textContent = "Izinkan audio untuk memutar musik";
+                });
+        }
+        
+        // Scale canvas display size while maintaining aspect ratio
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            const scale = Math.min(
+                windowWidth / CANVAS_WIDTH, 
+                windowHeight / CANVAS_HEIGHT
+            ) * 0.9; // 90% of maximum possible size
+            
+            const displayWidth = CANVAS_WIDTH * scale;
+            const displayHeight = CANVAS_HEIGHT * scale;
+            
+            canvas.style.width = `${displayWidth}px`;
+            canvas.style.height = `${displayHeight}px`;
+        }
+        
+        // Initial resize
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ... (rest of your existing animation code remains the same) ...
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function rand(a0, a1) {
+            return Math.random() * (a1 - a0) + a0;
+        }
+
+        const sizeSteps = 100;
+        const a = new Array(sizeSteps).fill(13);
+        const b = linspace(-5, -3.3, sizeSteps);
+        const c = linspace(-2, -2.4, sizeSteps);
+        const d = linspace(-1, -0.16, sizeSteps);
+        const scalex = linspace(1, 1.18, sizeSteps).map(v => v * 10);
+        const scaley = linspace(1, 1.36, sizeSteps).map(v => v * 10);
+
+        function linspace(start, end, count) {
+            const step = (end - start) / (count - 1);
+            return Array.from({length: count}, (_, i) => start + step * i);
+        }
+
+        function hsvToRgb(h, s, v) {
+            let r, g, b;
+            const i = Math.floor(h * 6);
+            const f = h * 6 - i;
+            const p = v * (1 - s);
+            const q = v * (1 - f * s);
+            const t = v * (1 - (1 - f) * s);
+            
+            switch (i % 6) {
+                case 0: r = v; g = t; b = p; break;
+                case 1: r = q; g = v; b = p; break;
+                case 2: r = p; g = v; b = t; break;
+                case 3: r = p; g = q; b = v; break;
+                case 4: r = t; g = p; b = v; break;
+                case 5: r = v; g = p; b = q; break;
+            }
+            
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        class PersistentParticle {
+            constructor(t, size, color, off_s) {
+                this.t = t;
+                this.off_s = off_s;
+                this.size = size;
+                this.color = color;
+            }
+
+            draw(i) {
+                const [x, y] = this.getPos(i);
+                drawCircle(x, y, this.size, this.color);
+            }
+
+            getPos(i) {
+                const t = this.t;
+
+                let xPos = 16 * Math.sin(t) ** 3;
+                xPos *= (scalex[i] + this.off_s);
+
+                let yPos = a[i] * Math.cos(t) + b[i] * Math.cos(2*t) + c[i] * Math.cos(3*t) + d[i] * Math.cos(4*t);
+                yPos *= (scaley[i] + this.off_s);
+
+                return [xPos + CANVAS_WIDTH / 2, -yPos + CANVAS_HEIGHT / 2];
+            }
+        }
+
+        class GlitterParticle {
+            constructor(t, size, color, off_x, off_y, off_s, phi) {
+                this.t = t;
+                this.off_x = off_x;
+                this.off_y = off_y;
+                this.off_s = off_s;
+                this.size = size;
+                this.color = color;
+                this.phi = phi;
+            }
+
+            getPos(i) {
+                const t = this.t;
+
+                let xPos = 16 * Math.sin(t) ** 3;
+                xPos += this.off_x;
+                xPos *= (scalex[i] + this.off_s);
+
+                let yPos = a[i] * Math.cos(t) + b[i] * Math.cos(2*t) + c[i] * Math.cos(3*t) + d[i] * Math.cos(4*t);
+                yPos += this.off_y;
+                yPos *= (scaley[i] + this.off_s);
+
+                return [xPos + CANVAS_WIDTH / 2, -yPos + CANVAS_HEIGHT / 2];
+            }
+
+            draw(i) {
+                const [x, y] = this.getPos(i);
+                const alpha = Math.floor(128 * Math.cos(this.phi + i / 5) + 127);
+                const [r, g, b] = this.color;
+                const color = `rgba(${r}, ${g}, ${b}, ${alpha/255})`;
+                drawCircle(x, y, this.size, color);
+            }
+        }
+
+        function createParticles() {
+            const persistentParticles = [];
+            const glitterParticles = [];
+
+            // Create persistent particles
+            for (let repeat = 0; repeat < 3; repeat++) {
+                const tValues1 = linspace(0.18, Math.PI - 0.18, 1000);
+                const tValues2 = linspace(Math.PI + 0.18, 2 * Math.PI - 0.18, 1000);
+                const tValues = [...tValues1, ...tValues2];
+                
+                for (const t of tValues) {
+                    const off_s = -exponentialRandom(1.8);
+                    const size = rand(1.5, 2.5);
+                    
+                    // color
+                    const [red, green, blue] = hsvToRgb(0.95, rand(0.2, 0.7), 1);
+                    const alpha = Math.random() * 255;
+                    const color = `rgba(${red}, ${green}, ${blue}, ${alpha/255})`;
+
+                    persistentParticles.push(new PersistentParticle(t, size, color, off_s));
+                }
+            }
+
+            // Create glitter particles
+            for (let repeat = 0; repeat < 3; repeat++) {
+                const tValues1 = linspace(0.2, Math.PI - 0.2, 1000);
+                const tValues2 = linspace(Math.PI + 0.2, 2 * Math.PI - 0.2, 1000);
+                const tValues = [...tValues1, ...tValues2];
+                
+                for (const t of tValues) {
+                    const off_x = gaussianRandom() * 2;
+                    const off_y = gaussianRandom() * 2;
+                    const off_s = gaussianRandom() * 1.5 - 1.8;
+                    const size = rand(1.5, 2.5);
+                    
+                    // color
+                    const [red, green, blue] = hsvToRgb(0.95, rand(0.5, 0.8), 1);
+                    const color = [red, green, blue];
+
+                    // phi
+                    const phi = rand(0, 2 * Math.PI);
+
+                    glitterParticles.push(new GlitterParticle(t, size, color, off_x, off_y, off_s, phi));
+                }
+            }
+
+            return { persistentParticles, glitterParticles };
+        }
+
+        function exponentialRandom(lambda) {
+            return -Math.log(1 - Math.random()) / lambda;
+        }
+
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        const bloomIndices = linspace(0, sizeSteps - 1, 40);
+        const shrinkIndices = linspace(sizeSteps - 1, 0, 30);
+        const indices = [...bloomIndices, ...shrinkIndices].map(v => Math.round(v));
+
+        const { persistentParticles, glitterParticles } = createParticles();
+        let frame = 0;
+
+        function animate() {
+            // Clear the canvas
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw
+            const index = indices[frame % indices.length];
+            for (const p of persistentParticles) {
+                p.draw(index);
+            }
+
+            for (const p of glitterParticles) {
+                p.draw(sizeSteps - 1 - index);
+            }
+
+            frame++;
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
