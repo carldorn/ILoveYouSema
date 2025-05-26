@@ -16,20 +16,11 @@ Repo ini berisi:
 - Kode ini **100% work** di browser, tapi **0% work** kalau Sema lagi *moody*.  
 - Jangan lupa **`git push`** rasa sayang tiap hari!  
 
-**Installation:**  
-```bash  
-git clone https://github.com/username/heartbeat-for-sem4.git  
-cd heartbeat-for-sem4  
-# Teriak: "Sem4, aku sayang kamu!" sambil buka index.html  
-```  
-
 **Contribution:**  
 PR (Pull Request) diterima! Tapi hati-hati, jangan sampai Sema malah *merge* dengan orang lain. 😭  
 
 ---  
 **⚠️ Warning:** Jangan sampai ketauan Sema kalo aku lebih jago koding daripada ngucapin *"I love you"* langsung.  
-
-**Demo:** [https://username.github.io/heartbeat-for-sem4](https://carldorn.github.io/ILoveYouSema/) *(kalau Sema nggak *404: Heart Not Found*)*  
 
 **#CodingCinta #GakJagoTapiJadian #SemaJanganGhosting**  
 
